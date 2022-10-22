@@ -1,0 +1,21 @@
+{
+  "Id": 1,
+  "Name": "Ready Teknoloji Hizmetleri",
+  "Employees": [
+    {
+      "Name": "Mert",
+      "Surname": "Baykar",
+      "Age": 24
+    },
+    {
+      "Name": "Bülent",
+      "Surname": "Emet",
+      "Age": 46
+    },
+    {
+      "Name": "Sami",
+      "Surname": "Çoker",
+      "Age": 32
+    }
+  ]
+}

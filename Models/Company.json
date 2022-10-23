@@ -1,6 +1,6 @@
 {
   "Id": 6,
-  "Name": "Merdoo",
+  "Name": "Ready Teknoloji Hizmetleri",
   "Employees": [
     {
       "Name": "Mert",
@@ -16,6 +16,21 @@
       "Name": "Sami",
       "Surname": "Çoker",
       "Age": 32
+    },
+    {
+      "Name": "Yasin",
+      "Surname": "Ceylan",
+      "Age": 33
+    },
+    {
+      "Name": "Pelin",
+      "Surname": "Baykar",
+      "Age": 39
+    },
+    {
+      "Name": "Rüveyde",
+      "Surname": "Baykar",
+      "Age": 62
     }
   ]
 }

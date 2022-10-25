@@ -1,36 +1,67 @@
 {
   "Id": 6,
-  "Name": "Ready Teknoloji Hizmetleri",
+  "Name": "Mert",
   "Employees": [
     {
       "Name": "Mert",
       "Surname": "Baykar",
-      "Age": 24
-    },
-    {
-      "Name": "Bülent",
-      "Surname": "Emet",
-      "Age": 46
+      "Age": 24,
+      "SubEmployees": null
     },
     {
       "Name": "Sami",
       "Surname": "Çoker",
-      "Age": 32
+      "Age": 32,
+      "SubEmployees": null
     },
     {
       "Name": "Yasin",
       "Surname": "Ceylan",
-      "Age": 33
+      "Age": 33,
+      "SubEmployees": null
     },
     {
       "Name": "Pelin",
       "Surname": "Baykar",
-      "Age": 39
+      "Age": 39,
+      "SubEmployees": null
     },
     {
       "Name": "Rüveyde",
       "Surname": "Baykar",
-      "Age": 62
+      "Age": 62,
+      "SubEmployees": null
+    },
+    {
+      "Name": "Hüseyin",
+      "Surname": "Baykar",
+      "Age": 67,
+      "SubEmployees": null
+    },
+    {
+      "Name": "Ezgi",
+      "Surname": "Baykar",
+      "Age": 27,
+      "SubEmployees": null
     }
-  ]
+  ],
+  "Boss": {
+    "Name": "Ozan",
+    "Surname": "Emet",
+    "Age": 46,
+    "SubEmployees": [
+      {
+        "Name": "Hüseyin",
+        "Surname": "Baykar",
+        "Age": 67,
+        "SubEmployees": null
+      },
+      {
+        "Name": "Ezgi",
+        "Surname": "Baykar",
+        "Age": 27,
+        "SubEmployees": null
+      }
+    ]
+  }
 }

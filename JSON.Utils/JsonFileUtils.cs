@@ -69,23 +69,6 @@ namespace JSON.Utils
             AddData(rootData, value);
             WriteToFile(filepath, rootData);
         }
-        /// <summary>
-        /// Finds property with specified name and ensures the property is type of TValue.
-        /// If operation was a success, then writes JSON result to the specified file.
-        /// Otherwise throws exception.
-        /// </summary>
-        /// <typeparam name="TRoot"></typeparam>
-        /// <typeparam name="TValue"></typeparam>
-        /// <param name="filepath"></param>
-        /// <param name="propertyName"></param>
-        /// <param name="value"></param>
-        public static void AddValueToJsonFile<TRoot, TValue>(string filepath, string propertyName, TValue value) where TRoot : class
-        {
-            ValidateValueType(typeof(TValue));
-            TRoot rootData = GetData<TRoot>(filepath);
-            AddData(rootData, propertyName, value);
-            WriteToFile(filepath, rootData);
-        }
 
         public static void AddValueToJsonFile<TRoot, TValue>(string filepath, Expression<Func<TRoot, TValue>> propertyExpression, TValue value) where TRoot : class
         {
@@ -95,7 +78,7 @@ namespace JSON.Utils
             WriteToFile(filepath, rootData);
         }
 
-        public static void AddValueToJsonFile<TRoot, TValue>(string filepath, Expression<Func<TRoot, List<TValue>>> propertyExpression, TValue value) where TRoot : class
+        public static void AddValueToJsonFile<TRoot, TValue>(string filepath, Expression<Func<TRoot, ICollection<TValue>>> propertyExpression, TValue value) where TRoot : class
         {
             ValidateValueType(typeof(TValue));
             TRoot rootData = GetData<TRoot>(filepath);
@@ -103,46 +86,14 @@ namespace JSON.Utils
             WriteToFile(filepath, rootData);
         }
 
-        public static void AddValueToJsonFile<TRoot, TValue>(string filepath, Expression<Func<TRoot, List<TValue>>> propertyExpression, List<TValue> values) where TRoot : class
+        public static void AddValueToJsonFile<TRoot, TValue>(string filepath, Expression<Func<TRoot, ICollection<TValue>>> propertyExpression, ICollection<TValue> values) where TRoot : class
         {
             ValidateValueType(typeof(TValue));
             TRoot rootData = GetData<TRoot>(filepath);
             AddData(rootData, propertyExpression, values);
             WriteToFile(filepath, rootData);
         }
-
-        /// <summary>
-        /// Finds the property of rootData with specified property name and sets or adds value. If property not found, throws exception
-        /// </summary>
-        /// <typeparam name="TRoot"></typeparam>
-        /// <typeparam name="TValue"></typeparam>
-        /// <param name="rootData"></param>
-        /// <param name="propertyName"></param>
-        /// <param name="value"></param>
-        /// <exception cref="MissingMemberException"></exception>
-        /// <exception cref="Exception"></exception>
-        public static void AddData<TRoot, TValue>(TRoot rootData, string propertyName, TValue value) where TRoot : class
-        {
-            PropertyInfo property = typeof(TRoot).GetProperty(propertyName);
-            if (property is null)
-                throw new MissingMemberException(typeof(TRoot).Name, propertyName);
-
-            if (property.PropertyType == typeof(TValue))
-                property.SetValue(rootData, value);
-            else if (property.PropertyType == typeof(List<TValue>))
-            {
-                List<TValue> list = property.GetValue(rootData) as List<TValue>;
-                if (list == null)
-                    list = new List<TValue>();
-                list.Add(value);
-                property.SetValue(rootData, list);
-            }
-            else
-            {
-                var typeName = typeof(TValue).Name;
-                throw new Exception(propertyName + " property must be declared as List<" + typeName + "> or " + typeName);
-            }
-        }
+        
         /// <summary>
         /// Finds the property of rootData with specified property name and sets value. If property not found, throws exception
         /// </summary>
@@ -153,8 +104,7 @@ namespace JSON.Utils
         /// <param name="value"></param>
         public static void AddData<TRoot, TValue>(TRoot rootData, Expression<Func<TRoot, TValue>> propertyExpression, TValue value) where TRoot : class
         {
-            string propertyName = GetPropertyNameFromExpression(propertyExpression);
-            AddData(rootData, propertyName, value);
+            HandlePropertyValueByExpression(propertyExpression, value, rootData);
         }
         /// <summary>
         /// Finds the property of rootData with specified property name and adds value. If property not found, throws exception
@@ -166,25 +116,25 @@ namespace JSON.Utils
         /// <param name="values"></param>
         /// <exception cref="MissingMemberException"></exception>
         /// <exception cref="Exception"></exception>
-        public static void AddData<TRoot, TValue>(TRoot rootData, Expression<Func<TRoot, List<TValue>>> propertyExpression, List<TValue> values) where TRoot : class
+        public static void AddData<TRoot, TValue>(TRoot rootData, Expression<Func<TRoot, ICollection<TValue>>> propertyExpression, ICollection<TValue> values) where TRoot : class
         {
-            PropertyInfo property = GetPropertyFromExpression(propertyExpression);
-            if (property is null)
-                throw new MissingMemberException(typeof(TRoot).Name, property.Name);
-           
-            if (property.PropertyType == typeof(List<TValue>))
-            {
-                List<TValue> list = property.GetValue(rootData) as List<TValue>;
-                if (list == null)
-                    list = new List<TValue>();
-                list.AddRange(values);
-                property.SetValue(rootData, list);
-            }
-            else
-            {
-                var typeName = typeof(TValue).Name;
-                throw new Exception(property.Name + " property must be declared as List<" + typeName + "> or " + typeName);
-            }
+            HandlePropertyValuesByExpression(propertyExpression, values, rootData);
+            //if (property is null)
+            //    throw new MissingMemberException(typeof(TRoot).Name, property.Name);
+
+            //if (property.PropertyType == typeof(List<TValue>))
+            //{
+            //    List<TValue> list = property.GetValue(rootData) as List<TValue>;
+            //    if (list == null)
+            //        list = new List<TValue>();
+            //    list.AddRange(values);
+            //    property.SetValue(rootData, list);
+            //}
+            //else
+            //{
+            //    var typeName = typeof(TValue).Name;
+            //    throw new Exception(property.Name + " property must be declared as List<" + typeName + "> or " + typeName);
+            //}
         }
         /// <summary>
         /// Finds the property of rootData with specified property name and adds value. If property not found, throws exception
@@ -194,40 +144,22 @@ namespace JSON.Utils
         /// <param name="rootData"></param>
         /// <param name="propertyExpression"></param>
         /// <param name="value"></param>
-        public static void AddData<TRoot, TValue>(TRoot rootData, Expression<Func<TRoot, List<TValue>>> propertyExpression, TValue value) where TRoot : class
+        public static void AddData<TRoot, TValue>(TRoot rootData, Expression<Func<TRoot, ICollection<TValue>>> propertyExpression, TValue value) where TRoot : class
         {
-            string propertyName = GetPropertyNameFromExpression(propertyExpression);
-            AddData(rootData, propertyName, value);
+            //var property = HandlePropertyValueByExpression(propertyExpression,value);
+            //AddData(rootData, propertyName, value);
         }
+        
         /// <summary>
-        /// Gets property from expression. Note that it supports only first level properties.
+        /// Sets given value to the given property captured by expression
         /// </summary>
         /// <typeparam name="TRoot"></typeparam>
-        /// <typeparam name="TProperty"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
         /// <param name="expression"></param>
-        /// <returns></returns>
+        /// <param name="value"></param>
+        /// <param name="rootData"></param>
         /// <exception cref="Exception"></exception>
-        public static string GetPropertyNameFromExpression<TRoot,TProperty>(Expression<Func<TRoot, TProperty>> expression)
-        {
-            try
-            {
-                PropertyInfo property = GetPropertyFromExpression(expression);
-                return property.Name;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message, ex.InnerException);
-            }
-        }
-        /// <summary>
-        /// Gets property from expression. Note that it supports only first level properties.
-        /// </summary>
-        /// <typeparam name="TRoot"></typeparam>
-        /// <typeparam name="TProperty"></typeparam>
-        /// <param name="expression"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public static PropertyInfo GetPropertyFromExpression<TRoot, TProperty>(Expression<Func<TRoot, TProperty>> expression)
+        public static void HandlePropertyValueByExpression<TRoot, TValue>(Expression<Func<TRoot, TValue>> expression, TValue value, TRoot rootData)
         {
             try
             {
@@ -242,8 +174,99 @@ namespace JSON.Utils
                 else
                     memberExpression = (MemberExpression)(lambda.Body);
 
+
+                PropertyInfo parentProperty = null;
+
+                try
+                {
+                    parentProperty = (memberExpression.Expression as MemberExpression).Member as PropertyInfo;
+                }
+                catch (Exception ex)
+                {
+                    parentProperty = memberExpression.Member as PropertyInfo;
+                }
+
+                var parentValue = parentProperty.GetValue(rootData);
                 PropertyInfo property = memberExpression.Member as PropertyInfo;
-                return property;
+                var searchedProperty = parentValue.GetType().GetProperty(property.Name);
+                
+                if (searchedProperty != null)
+                {
+                    searchedProperty.SetValue(parentValue, value);
+                    parentProperty.SetValue(rootData, parentValue);
+                }
+                else
+                {
+                    parentProperty.SetValue(rootData, value);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message, ex.InnerException);
+            }
+        }
+        /// <summary>
+        /// Adds collection to specified property which is known as collection
+        /// </summary>
+        /// <typeparam name="TRoot"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="expression"></param>
+        /// <param name="values"></param>
+        /// <param name="rootData"></param>
+        /// <exception cref="Exception"></exception>
+        public static void HandlePropertyValuesByExpression<TRoot, TValue>(Expression<Func<TRoot, ICollection<TValue>>> expression, ICollection<TValue> values, TRoot rootData)
+        {
+            try
+            {
+                LambdaExpression lambda = (LambdaExpression)expression;
+                MemberExpression memberExpression;
+
+                if (lambda.Body is UnaryExpression)
+                {
+                    UnaryExpression unaryExpression = (UnaryExpression)(lambda.Body);
+                    memberExpression = (MemberExpression)(unaryExpression.Operand);
+                }
+                else
+                    memberExpression = (MemberExpression)(lambda.Body);
+
+                PropertyInfo parentProperty = null;
+
+                try
+                {
+                    parentProperty = (memberExpression.Expression as MemberExpression).Member as PropertyInfo;
+                }
+                catch (Exception)
+                {
+                    parentProperty = memberExpression.Member as PropertyInfo;
+                }
+
+                var parentValue = parentProperty.GetValue(rootData);
+                PropertyInfo property = memberExpression.Member as PropertyInfo;
+                var searchedProperty = parentValue.GetType().GetProperty(property.Name);
+
+                if (searchedProperty!= null)
+                {
+                    var list = searchedProperty.GetValue(parentValue) as ICollection<TValue>;
+                    if (list is null)
+                        list = new List<TValue>();
+
+                    foreach (TValue value in values)
+                    {
+                        list.Add(value);
+                    }
+                    searchedProperty.SetValue(parentValue, list);
+                    parentProperty.SetValue(rootData, parentValue);
+                }
+                else
+                {
+                    var list = parentValue as ICollection<TValue>;
+                    foreach (TValue value in values)
+                    {
+                        list.Add(value);
+                    }
+                    parentProperty.SetValue(rootData, list);
+                }
             }
             catch (Exception ex)
             {

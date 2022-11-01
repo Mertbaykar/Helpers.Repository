@@ -16,60 +16,13 @@ namespace JSON.Utils
         };
 
         /// <summary>
-        /// Adds employee to company and saves in the specified json file
-        /// </summary>
-        /// <param name="filepath"></param>
-        /// <param name="employee"></param>
-        /// <exception cref="FileNotFoundException"></exception>
-        /// <exception cref="Exception"></exception>
-        public static void AddEmployeeToCompany(string filepath, Employee employee)
-        {
-            ValidateFile(filepath);
-
-            try
-            {
-                #region Update data and write to specified file
-                string json = "";
-
-                using (StreamReader reader = new StreamReader(filepath))
-                {
-                    json = reader.ReadToEnd();
-                }
-
-                Company company = JsonSerializer.Deserialize<Company>(json);
-
-                if (!company.Employees.Contains(employee))
-                {
-                    company.Employees.Add(employee);
-                    json = JsonSerializer.Serialize(company, options);
-                    File.WriteAllText(filepath, json);
-                }
-
-                #endregion
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message, ex.InnerException);
-            }
-
-        }
-
-        /// <summary>
-        /// Finds property with type of TValue in TRoot and sets or adds value. If operation was a success, then writes JSON result to the specified file.
-        /// Otherwise throws exception.
+        /// Reads specified JSON file and deserializes as TRoot type. Finds the specified property and sets the given value as property value, then overwrites the specified file by serializing and writing current TRoot data.
         /// </summary>
         /// <typeparam name="TRoot"></typeparam>
         /// <typeparam name="TValue"></typeparam>
         /// <param name="filepath"></param>
+        /// <param name="propertyExpression"></param>
         /// <param name="value"></param>
-        public static void AddValueToJsonFile<TRoot, TValue>(string filepath, TValue value) where TRoot : class
-        {
-            ValidateValueType(typeof(TValue));
-            TRoot rootData = GetData<TRoot>(filepath);
-            AddData(rootData, value);
-            WriteToFile(filepath, rootData);
-        }
-
         public static void AddValueToJsonFile<TRoot, TValue>(string filepath, Expression<Func<TRoot, TValue>> propertyExpression, TValue value) where TRoot : class
         {
             ValidateValueType(typeof(TValue));
@@ -77,8 +30,15 @@ namespace JSON.Utils
             AddData(rootData, propertyExpression, value);
             WriteToFile(filepath, rootData);
         }
-
-        public static void AddValueToJsonFile<TRoot, TValue>(string filepath, Expression<Func<TRoot, ICollection<TValue>>> propertyExpression, TValue value) where TRoot : class
+        /// <summary>
+        /// Reads specified JSON file and deserializes as TRoot type. Finds the specified property and adds the given value to property value, then overwrites the specified file by serializing and writing current TRoot data. 
+        /// </summary>
+        /// <typeparam name="TRoot"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="filepath"></param>
+        /// <param name="propertyExpression"></param>
+        /// <param name="value"></param>
+        public static void AddValueToJsonFile<TRoot, TValue>(string filepath, Expression<Func<TRoot, IEnumerable<TValue>>> propertyExpression, TValue value) where TRoot : class
         {
             ValidateValueType(typeof(TValue));
             TRoot rootData = GetData<TRoot>(filepath);
@@ -86,14 +46,22 @@ namespace JSON.Utils
             WriteToFile(filepath, rootData);
         }
 
-        public static void AddValueToJsonFile<TRoot, TValue>(string filepath, Expression<Func<TRoot, ICollection<TValue>>> propertyExpression, ICollection<TValue> values) where TRoot : class
+        /// <summary>
+        /// Reads specified JSON file and deserializes as TRoot type. Finds the specified property and adds the given values to property value, then overwrites the specified file by serializing and writing current TRoot data.
+        /// </summary>
+        /// <typeparam name="TRoot"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="filepath"></param>
+        /// <param name="propertyExpression"></param>
+        /// <param name="values"></param>
+        public static void AddValueToJsonFile<TRoot, TValue>(string filepath, Expression<Func<TRoot, IEnumerable<TValue>>> propertyExpression, IEnumerable<TValue> values) where TRoot : class
         {
             ValidateValueType(typeof(TValue));
             TRoot rootData = GetData<TRoot>(filepath);
             AddData(rootData, propertyExpression, values);
             WriteToFile(filepath, rootData);
         }
-        
+
         /// <summary>
         /// Finds the property of rootData with specified property name and sets value. If property not found, throws exception
         /// </summary>
@@ -102,7 +70,7 @@ namespace JSON.Utils
         /// <param name="rootData"></param>
         /// <param name="propertyExpression"></param>
         /// <param name="value"></param>
-        public static void AddData<TRoot, TValue>(TRoot rootData, Expression<Func<TRoot, TValue>> propertyExpression, TValue value) where TRoot : class
+        private static void AddData<TRoot, TValue>(TRoot rootData, Expression<Func<TRoot, TValue>> propertyExpression, TValue value) where TRoot : class
         {
             HandlePropertyValueByExpression(propertyExpression, value, rootData);
         }
@@ -116,25 +84,9 @@ namespace JSON.Utils
         /// <param name="values"></param>
         /// <exception cref="MissingMemberException"></exception>
         /// <exception cref="Exception"></exception>
-        public static void AddData<TRoot, TValue>(TRoot rootData, Expression<Func<TRoot, ICollection<TValue>>> propertyExpression, ICollection<TValue> values) where TRoot : class
+        private static void AddData<TRoot, TValue>(TRoot rootData, Expression<Func<TRoot, IEnumerable<TValue>>> propertyExpression, IEnumerable<TValue> values) where TRoot : class
         {
             HandlePropertyValuesByExpression(propertyExpression, values, rootData);
-            //if (property is null)
-            //    throw new MissingMemberException(typeof(TRoot).Name, property.Name);
-
-            //if (property.PropertyType == typeof(List<TValue>))
-            //{
-            //    List<TValue> list = property.GetValue(rootData) as List<TValue>;
-            //    if (list == null)
-            //        list = new List<TValue>();
-            //    list.AddRange(values);
-            //    property.SetValue(rootData, list);
-            //}
-            //else
-            //{
-            //    var typeName = typeof(TValue).Name;
-            //    throw new Exception(property.Name + " property must be declared as List<" + typeName + "> or " + typeName);
-            //}
         }
         /// <summary>
         /// Finds the property of rootData with specified property name and adds value. If property not found, throws exception
@@ -144,14 +96,13 @@ namespace JSON.Utils
         /// <param name="rootData"></param>
         /// <param name="propertyExpression"></param>
         /// <param name="value"></param>
-        public static void AddData<TRoot, TValue>(TRoot rootData, Expression<Func<TRoot, ICollection<TValue>>> propertyExpression, TValue value) where TRoot : class
+        private static void AddData<TRoot, TValue>(TRoot rootData, Expression<Func<TRoot, IEnumerable<TValue>>> propertyExpression, TValue value) where TRoot : class
         {
-            //var property = HandlePropertyValueByExpression(propertyExpression,value);
-            //AddData(rootData, propertyName, value);
+            HandlePropertyValuesByExpression(propertyExpression, value, rootData);
         }
-        
+
         /// <summary>
-        /// Sets given value to the given property captured by expression
+        /// Sets given value to the specified property captured by expression
         /// </summary>
         /// <typeparam name="TRoot"></typeparam>
         /// <typeparam name="TValue"></typeparam>
@@ -159,7 +110,7 @@ namespace JSON.Utils
         /// <param name="value"></param>
         /// <param name="rootData"></param>
         /// <exception cref="Exception"></exception>
-        public static void HandlePropertyValueByExpression<TRoot, TValue>(Expression<Func<TRoot, TValue>> expression, TValue value, TRoot rootData)
+        private static void HandlePropertyValueByExpression<TRoot, TValue>(Expression<Func<TRoot, TValue>> expression, TValue value, TRoot rootData)
         {
             try
             {
@@ -189,7 +140,7 @@ namespace JSON.Utils
                 var parentValue = parentProperty.GetValue(rootData);
                 PropertyInfo property = memberExpression.Member as PropertyInfo;
                 var searchedProperty = parentValue.GetType().GetProperty(property.Name);
-                
+
                 if (searchedProperty != null)
                 {
                     searchedProperty.SetValue(parentValue, value);
@@ -207,7 +158,7 @@ namespace JSON.Utils
             }
         }
         /// <summary>
-        /// Adds collection to specified property which is known as collection
+        /// Adds values to specified property captured by expression
         /// </summary>
         /// <typeparam name="TRoot"></typeparam>
         /// <typeparam name="TValue"></typeparam>
@@ -215,7 +166,83 @@ namespace JSON.Utils
         /// <param name="values"></param>
         /// <param name="rootData"></param>
         /// <exception cref="Exception"></exception>
-        public static void HandlePropertyValuesByExpression<TRoot, TValue>(Expression<Func<TRoot, ICollection<TValue>>> expression, ICollection<TValue> values, TRoot rootData)
+        private static void HandlePropertyValuesByExpression<TRoot, TValue>(Expression<Func<TRoot, IEnumerable<TValue>>> expression, IEnumerable<TValue> values, TRoot rootData)
+        {
+            try
+            {
+                LambdaExpression lambda = (LambdaExpression)expression;
+                MemberExpression memberExpression;
+
+                if (lambda.Body is UnaryExpression)
+                {
+                    UnaryExpression unaryExpression = (UnaryExpression)(lambda.Body);
+                    memberExpression = (MemberExpression)(unaryExpression.Operand);
+                }
+                else
+                    memberExpression = (MemberExpression)(lambda.Body);
+
+                PropertyInfo parentProperty = null;
+
+                try
+                {
+                    parentProperty = (memberExpression.Expression as MemberExpression).Member as PropertyInfo;
+                }
+                catch (Exception ex)
+                {
+                    parentProperty = memberExpression.Member as PropertyInfo;
+                }
+
+                var parentValue = parentProperty.GetValue(rootData);
+                PropertyInfo property = memberExpression.Member as PropertyInfo;
+                PropertyInfo searchedProperty = null;
+                if (parentValue != null)
+                    searchedProperty = parentValue.GetType().GetProperty(property.Name);
+
+
+                if (searchedProperty != null)
+                {
+                    var listEnumerable = searchedProperty.GetValue(parentValue) as IEnumerable<TValue>;
+                    List<TValue> list = null;
+
+                    if (listEnumerable is null)
+                        list = new List<TValue>();
+                    else
+                        list = listEnumerable.ToList();
+
+                    list.AddRange(values);
+                    searchedProperty.SetValue(parentValue, list);
+                    parentProperty.SetValue(rootData, parentValue);
+                }
+                else
+                {
+                    var listEnumerable = parentValue as IEnumerable<TValue>;
+                    List<TValue> list = null;
+
+                    if (listEnumerable is null)
+                        list = new List<TValue>();
+                    else
+                        list = listEnumerable.ToList();
+
+                    list.AddRange(values);
+                    parentProperty.SetValue(rootData, list);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message, ex.InnerException);
+            }
+        }
+
+        /// <summary>
+        /// Adds value to specified property captured by expression
+        /// </summary>
+        /// <typeparam name="TRoot"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="expression"></param>
+        /// <param name="value"></param>
+        /// <param name="rootData"></param>
+        /// <exception cref="Exception"></exception>
+        private static void HandlePropertyValuesByExpression<TRoot, TValue>(Expression<Func<TRoot, IEnumerable<TValue>>> expression, TValue value, TRoot rootData)
         {
             try
             {
@@ -245,26 +272,31 @@ namespace JSON.Utils
                 PropertyInfo property = memberExpression.Member as PropertyInfo;
                 var searchedProperty = parentValue.GetType().GetProperty(property.Name);
 
-                if (searchedProperty!= null)
+                if (searchedProperty != null)
                 {
-                    var list = searchedProperty.GetValue(parentValue) as ICollection<TValue>;
-                    if (list is null)
-                        list = new List<TValue>();
+                    var listEnumerable = searchedProperty.GetValue(parentValue) as IEnumerable<TValue>;
+                    List<TValue> list = null;
 
-                    foreach (TValue value in values)
-                    {
-                        list.Add(value);
-                    }
+                    if (listEnumerable is null)
+                        list = new List<TValue>();
+                    else
+                        list = listEnumerable.ToList();
+
+                    list.Add(value);
                     searchedProperty.SetValue(parentValue, list);
                     parentProperty.SetValue(rootData, parentValue);
                 }
                 else
                 {
-                    var list = parentValue as ICollection<TValue>;
-                    foreach (TValue value in values)
-                    {
-                        list.Add(value);
-                    }
+                    var listEnumerable = parentValue as IEnumerable<TValue>;
+                    List<TValue> list = null;
+
+                    if (listEnumerable is null)
+                        list = new List<TValue>();
+                    else
+                        list = listEnumerable.ToList();
+
+                    list.Add(value);
                     parentProperty.SetValue(rootData, list);
                 }
             }
@@ -275,11 +307,11 @@ namespace JSON.Utils
         }
 
         /// <summary>
-        /// Ensures that the given type is derived from IConvertible interface or it is a custom written class
+        /// Ensures that the given type is implements IConvertible interface or it is a custom written class
         /// </summary>
         /// <param name="valueType"></param>
         /// <exception cref="Exception"></exception>
-        public static void ValidateValueType(Type valueType)
+        private static void ValidateValueType(Type valueType)
         {
             if (!(IsCustomClass(valueType) || valueType.IsAssignableTo(typeof(IConvertible))))
                 throw new Exception("Value type must be a class or must be primitive");
@@ -295,60 +327,22 @@ namespace JSON.Utils
                 return true;
             return false;
         }
+        
         /// <summary>
-        /// Finds property of TRoot which is type of TValue, if found, adds or sets object. Otherwise, throws exception
+        /// Gets data as the specified type from JSON file
         /// </summary>
         /// <typeparam name="TRoot"></typeparam>
-        /// <typeparam name="TValue"></typeparam>
-        /// <param name="rootData"></param>
-        /// <param name="value"></param>
-        /// <exception cref="MissingMemberException"></exception>
-        public static void AddData<TRoot, TValue>(TRoot rootData, TValue value) where TRoot : class
-        {
-            List<PropertyInfo> rootProperties = typeof(TRoot).GetProperties().ToList();
-            bool isPropertyFound = false;
-
-            foreach (PropertyInfo property in rootProperties)
-            {
-                if (property.PropertyType == typeof(TValue))
-                {
-                    property.SetValue(rootData, value);
-                    isPropertyFound = true;
-                    break;
-                }
-                else if (property.PropertyType.IsAssignableTo(typeof(List<TValue>)))
-                {
-                    List<TValue> list = property.GetValue(rootData) as List<TValue>;
-                    if (list == null)
-                        list = new List<TValue>();
-                    list.Add(value);
-                    property.SetValue(rootData, list);
-                    isPropertyFound = true;
-                    break;
-                }
-            }
-            if (!isPropertyFound)
-            {
-                var typeName = typeof(TValue).Name;
-                throw new MissingMemberException("Property of " + typeName + " type is not found in " + typeName + " type");
-
-            }
-        }
-        /// <summary>
-        /// Gets data from JSON file
-        /// </summary>
-        /// <typeparam name="TData"></typeparam>
         /// <param name="filepath"></param>
         /// <returns></returns>
         /// <exception cref="JsonException"></exception>
-        public static TData GetData<TData>(string filepath) where TData : class
+        public static TRoot GetData<TRoot>(string filepath) where TRoot : class
         {
             string json = ReadFromFile(filepath);
-            TData data = null;
+            TRoot data = null;
 
             try
             {
-                data = JsonSerializer.Deserialize<TData>(json);
+                data = JsonSerializer.Deserialize<TRoot>(json);
                 return data;
             }
             catch (Exception ex)
@@ -390,10 +384,10 @@ namespace JSON.Utils
         /// <summary>
         /// Writes JSON result to specified file
         /// </summary>
-        /// <typeparam name="TData"></typeparam>
+        /// <typeparam name="TRoot"></typeparam>
         /// <param name="filepath"></param>
         /// <param name="data"></param>
-        public static void WriteToFile<TData>(string filepath, TData data) where TData : class
+        public static void WriteToFile<TRoot>(string filepath, TRoot data) where TRoot : class
         {
             string json = JsonSerializer.Serialize(data, options);
             File.WriteAllText(filepath, json);

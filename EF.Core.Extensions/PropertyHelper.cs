@@ -14,6 +14,7 @@ namespace EF.Core.Extensions
         public PropertyHelper(DbContext dbContext)
         {
             DbContext = dbContext;
+            InitSql();
         }
         internal string Sql { get; set; }
         internal DbContext DbContext { get; set; }
@@ -34,7 +35,7 @@ namespace EF.Core.Extensions
                 string columnName = EntityType.FindProperty(propertyName).GetColumnName(StoreObjectIdentifier);
 
                 string sqlParameterKey = "@" + propertyName;
-                if (SqlParameters.Contains(sqlParameterKey))
+                if (SqlParameters != null && SqlParameters.Contains(sqlParameterKey))
                     throw new Exception(propertyName + " property is set more than once");
 
                 // Sql handling

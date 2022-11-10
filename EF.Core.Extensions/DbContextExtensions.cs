@@ -12,7 +12,6 @@ namespace EF.Core.Extensions
             try
             {
                 PropertyHelper<TEntity> propertyHelper = new PropertyHelper<TEntity>(dbcontext);
-                propertyHelper.InitSql();
                 propertySettings.Invoke(propertyHelper);
 
                 // Sql set kısımları üst satırda handle edildi
